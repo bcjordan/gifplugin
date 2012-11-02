@@ -1,0 +1,19 @@
+{
+  "name": "My First Extension",
+  "version": "1.1",
+  "manifest_version": 2,
+  "description": "The first extension that I made.",
+  "browser_action": {
+    "default_icon": "icon.png",
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "http://*/",
+    "https://*/",
+    "http://ajax.googleapis.com/",
+    "http://api.flickr.com/",
+    "http://reddit.com/",
+    "http://tumblr.com/",
+    "http://senorgif.memebase.com/"
+  ]
+}
