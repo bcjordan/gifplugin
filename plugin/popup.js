@@ -1,107 +1,207 @@
-//const testURL = "http://reddit.com/r/gifs/search?q=popcorn&restrict_sr=on";
-const testURL = "http://google.com";
-var test = $.get(testURL);
+function construct_search_urls(searchTerm) {
+    return [
+        ['http://gifurl.com' + '/' + searchTerm],
+        ['http://www.reddit.com' + '/r/reactiongifs/search?q=' + searchTerm + '&restrict_sr=on'],
+        ['http://www.reddit.com' + '/r/gifs/search?q=' + searchTerm + '&restrict_sr=on'],
+        ['http://www.tumblr.com' + '/tagged/' + searchTerm + '-gif/everything'],
+        ['http://www.tumblr.com' + '/tagged/' + searchTerm + '-gifs/everything'],
+        ['http://www.tumblr.com' + '/tagged/' + searchTerm + '/everything'],
+//        ['http://senorgif.memebase.com' + '/tag/' + searchTerm],
+//        ['http://senorgif.memebase.com' + '/tag/' + searchTerm + '/page/2'],
+    ];
+}
 
-
-//$.ajax({
-//    url:testURL,
-//    beforeSend:function () {
-//        console.log("Before send.")
-//        // Handle the beforeSend event
-//    },
-//    complete:function (jqXHR, textStatus) {
-//        console.log("Completed." + textStatus)
-//        // Handle the complete event
-//    },
-//    success:function (data) {
-//        console.log("success." + data)
-//        // Handle the success event
-//    },
-//    error:function(jqXHR, textStatus, errorThrown) {
-//        console.log("error." + errorThrown);
-//    }
-//}).done(function ( data ) {
-//  if( console && console.log ) {
-//    console.log("Sample of data:", data.slice(0, 100));
-//  }
+//$("img").lazyload({
+//    effect:"fadeIn"
 //});
 
-function test() {
-    console.log("Testing");
-    console.log(req.responseXML);
+var sessionFoundURLs = {};
+var loadedHeights = [0, 0, 0];
+
+function reset() {
+    sessionFoundURLs = {};
+    loadedHeights = [0, 0, 0];
+    $('#gif0').empty();
+    $('#gif1').empty();
+    $('#gif2').empty();
+    $('#loaded0').empty();
+    $('#loaded1').empty();
+    $('#loaded2').empty();
+    $('#loading0').empty();
+    $('#loading1').empty();
+    $('#loading2').empty();
 }
 
-function callback(a) {
-    console.log("got google" + a)
+/**
+ * @return {Number}
+ */
+function getLoadedColumnNumber() {
+    return getIndexMin(loadedHeights);
 }
-$.get("http://google.com", callback);
 
-function showPhotos() {
-    var photos = req.responseXML.getElementsByTagName("photo");
+/**
+ * Gets the minimum index of the items in an {int} array
+ * @param array array of {int}s
+ * @return {int} index of the minimum item
+ */
+function getIndexMin(array) {
+    var minIndex = array.length - 1;
+    for (var i = array.length - 2; i >= 0; i--) {
+        minIndex = (array[i] < array[minIndex]) ? i : minIndex;
+    }
+    return minIndex;
+}
 
-    for (var i = 0, photo; photo = photos[i]; i++) {
-        var img = document.createElement("image");
-        img.src = constructImageURL(photo);
-        document.body.appendChild(img);
+function appendInfoWithTime(error, time) {
+    const message = $('<span> ' + error + '... </span>');
+    $("#status").prepend(message);
+    message.show().fadeOut(time);
+}
+function appendInfo(error) {
+    const time = 3000;
+    appendInfoWithTime(error, time);
+}
+$("#form").submit(function () {
+    appendInfoWithTime("Clicked...", 5000);
+
+    const searchTerm = $("input:first").val();
+
+    if (searchTerm && searchTerm != "") {
+        appendInfo("Searching...", 5000);
+        console.log("Searching for term " + searchTerm);
+        reset();
+        search(searchTerm);
+    }
+    else {
+        const error = "Enter a search!";
+        appendInfo(error);
+    }
+
+    return false; // Don't submit form
+});
+
+$("#copyBox")
+    .on('click', function () {
+        return false;
+    });
+
+function createTabFunction(element) {
+    return function () {
+        chrome.tabs.create({url:element.attr("src")});
     }
 }
 
-var test_regex = /(http(s?):)([/|.|\w|\s])*\.(?:gif)/g;
-
-const DELAY = 10;
-
-var searchGifs = function (keyword, request) {
-    var gif_sources = [
-        ['www.reddit.com', '/r/gifs/search?q=' + keyword + '&restrict_sr=on', test_regex],
-        ['www.tumblr.com', '/tagged/' + keyword + '-gif/everything', test_regex],
-        ['www.tumblr.com', '/tagged/' + keyword + '-gifs/everything', test_regex],
-        ['www.tumblr.com', '/tagged/' + keyword + '/everything', test_regex],
-        ['senorgif.memebase.com', '/tag/' + keyword, test_regex],
-        ['senorgif.memebase.com', '/tag/' + keyword + '/page/2', test_regex],
-        ['senorgif.memebase.com', '/tag/' + keyword + '/page/3', test_regex],
-        ['senorgif.memebase.com', '/tag/' + keyword + '/page/4', test_regex],
-    ];
-
-    var sockets = []; // collect connections
-
-    // Fetch new gifs from Reddit
-    for (var s = 0; s < gif_sources.length; s++) {
-        // s -> i to avoid closure issues
-        (function (i) {
-
-            setTimeout(function () {
-                var get = http.get({ host:gif_sources[i][0],
-                        path:gif_sources[i][1],
-                        port:80
-                    },
-
-                    function (res) {
-                        res.on('data',
-                            function (chunk) {
-                                var url_regex = gif_sources[i][2];
-                                var matches = chunk.toString().match(url_regex) || [];
-                                for (var m = 0; m < matches.length; m += 1) {
-                                    if (!request.session.urls[matches[m]]) {
-                                        request.session.urls['yo2'] = 'yo3';
-                                        request.session.urls[matches[m]] = true;
-                                        console.log("Found new gif: " + matches[m]);
-                                    }
-                                }
-                            })
-
-                        res.on('end', function () {
-                            if (DEBUG)
-                                for (u in request.session.urls) {
-                                    console.log("" + u);
-                                }
-                        })
-                    })
-
-                console.log("Fetched source " + gif_sources[i] + " index " + i);
-
-            }, i * (DELAY / gif_sources.length))
-        })(s)
+function copyTextFunction(element) {
+    return function () {
+        const src = element.attr("src");
+        console.log("Src is " + src);
+        $("#copyBox").attr("value", src);
+//        $("#copyBox").blur();
+        $('#copyBox').focus();
+        $('#copyBox').select();
     }
 }
 
-//searchGifs();
+function createShrinkFunction(element) {
+    return function () {
+        element.removeClass("huge");
+    }
+}
+
+function createShrinkFunction(element) {
+    return function () {
+        element.addClass("huge");
+    }
+}
+
+/**
+ *
+ * @param {String} state e.g., "loading", "loaded"
+ * @param {int} i
+ * @return {Function}
+ */
+function createSelectorFunction(state, i) {
+    return function () {
+        return "#" + state + ((i + 1) % 3).toString()
+    };
+}
+
+function createLoadedFunction(element) {
+    return function () {
+        console.log("Load fired.");
+        console.log(element, element[0].naturalWidth, element[0].naturalHeight);
+        console.log(element, element[0].width, element[0].height);
+        var loadedColumn = getLoadedColumnNumber();
+        $("#gif" + loadedColumn).append(element);
+        var imageHeight = element[0].height;
+        loadedHeights[loadedColumn] = loadedHeights[loadedColumn] + ((imageHeight != 0) ? imageHeight : 100);
+    }
+}
+
+function search(searchTerm) {
+    const GIF_REGEX = /(http(s?):)([/|.|\w|\s])*\.(?:gif)/g;
+    const LOADING_GIF = "http://24.media.tumblr.com/tumblr_m31qo133h91qkj7sso1_100.gif";
+
+    var searchURLs = construct_search_urls(searchTerm);
+    var searchURL;
+
+    for (var i = searchURLs.length - 1; i >= 0; i--) {
+        searchURL = searchURLs[i];
+        $.ajax({
+            url:searchURL,
+            beforeSend:function () {
+                // Handle the beforeSend event
+            },
+            complete:function (jqXHR, textStatus) {
+                // Handle the complete event
+            },
+            success:function (data) {
+                console.log("Processing success data...")
+                // Handle the success event
+                var foundURLs = data.toString().match(GIF_REGEX) || [];
+                console.log(foundURLs.length.toString() + " gifs found on " + this.url)
+                for (var i = 0; i < foundURLs.length; i++) {
+                    var foundURL = foundURLs[i];
+                    if (!sessionFoundURLs[foundURL]) {
+                        sessionFoundURLs[foundURL] = true;
+                        console.log("Found new gif: " + foundURL);
+//                        var element = $('<img class="lazy" src="' + LOADING_GIF + '" data-original="' + foundURL + '"/>');
+                        var element = $('<img class="lazy" data-original="' + LOADING_GIF + '" src="' + foundURL + '"/>');
+                        element.click(copyTextFunction(element));
+                        element.dblclick(createTabFunction(element));
+                        element.load(createLoadedFunction(element));
+                    }
+                }
+
+//                $("img").show().lazyload(
+//                    {
+//                        threshold:300,
+//                        container:$("#gifs"),
+//                        placeholder:LOADING_GIF
+//                    }
+//                );
+            },
+            error:function (jqXHR, textStatus, errorThrown) {
+                console.log("error." + errorThrown);
+                appendInfo(this.url + " search failed.");
+            }
+        });
+    }
+}
+
+$(function () {
+    $('img').live('mouseover', function () {
+        jQuery(this).lightBox();
+    });
+
+    $('#big').click(function () {
+        $('body').css("min-width", "800px");
+        $('body').css("min-height", "600px");
+        $('#gifs').css('width', "750px");
+        $('#gifs').css('height', "580px");
+        $('#gif0').css('width', "220px");
+        $('#gif1').css('width', "220px");
+        $('#gif2').css('width', "220px");
+        $('img').css('width', "200px");
+    })
+});

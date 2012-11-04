@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-    <title>Getting Started Extension's Popup</title>
+    <title>Gif Finder</title>
     <style>
         body {
             min-width: 357px;
@@ -12,14 +12,77 @@
             margin: 5px;
             border: 2px solid black;
             vertical-align: middle;
-            width: 75px;
-            height: 75px;
+            width: 100px;
+            height: auto;
+        }
+
+        .huge {
+            width: 300px;
+            height: 300px;
+        }
+
+        #gifs {
+            overflow: scroll;
+            width: 350px;
+            height: 350px;
+        }
+
+        #status {
+            font-size: 12px;
+            height: 30px;
+        }
+
+        #formcontainer {
+            width: 100%;
+            text-align: center;
+        }
+
+        #gif0 {
+            float: left;
+            width: 115px;
+        }
+
+        #gif1 {
+            float: left;
+            width: 115px;
+        }
+
+        #gif2 {
+            float: left;
+            width: 115px;
         }
     </style>
     <script type="text/javascript" src="jquery.js"></script>
-    <!-- JavaScript and HTML must be in separate files for security. -->
-    <script src="popup.js"></script>
+    <script src="jquery.lazyload.js" type="text/javascript"></script>
+    <script src="jquery.imagesloaded.js" type="text/javascript"></script>
+    <script src="jquery.scrollstop.js" type="text/javascript"></script>
 </head>
 <body>
+
+<div id="formcontainer">
+    <form id="form">
+        <input id="term" type="text"/>
+        <input type="submit" value="Search"/>
+        <input id="copyBox" type="text"/>
+        <a id="big">BIG</a>
+    </form>
+</div>
+<div id="gifs">
+    <div id="gif0">
+        <!--<div id="loaded0"></div>-->
+        <!--<div id="loading0"></div>-->
+    </div>
+    <div id="gif1">
+        <!--<div id="loaded1"></div>-->
+        <!--<div id="loading1"></div>-->
+    </div>
+    <div id="gif2">
+        <!--<div id="loaded2"></div>-->
+        <!--<div id="loading2"></div>-->
+    </div>
+</div>
+<div id="status"></div>
+
+<script src="popup.js"></script>
 </body>
 </html>
