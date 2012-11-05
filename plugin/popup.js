@@ -1,9 +1,10 @@
 function construct_search_urls(searchTerm) {
     return [
         ['http://gifurl.com' + '/' + searchTerm],
-        ['http://www.reddit.com' + '/r/reactiongifs/search?q=' + searchTerm + '&restrict_sr=on'],
         ['http://www.reddit.com' + '/r/gifs/search?q=' + searchTerm + '&restrict_sr=on'],
         ['http://www.tumblr.com' + '/tagged/' + searchTerm + '-gif/everything'],
+        ['http://www.reddit.com' + '/r/reactiongifs/search?q=' + searchTerm + '&restrict_sr=on'],
+        ['http://www.reddit.com' + '/r/brokengifs/search?q=' + searchTerm + '&restrict_sr=on'],
         ['http://www.tumblr.com' + '/tagged/' + searchTerm + '-gifs/everything'],
         ['http://www.tumblr.com' + '/tagged/' + searchTerm + '/everything'],
 //        ['http://senorgif.memebase.com' + '/tag/' + searchTerm],
@@ -15,15 +16,24 @@ function construct_search_urls(searchTerm) {
 //    effect:"fadeIn"
 //});
 
-var sessionFoundURLs = {};
-var loadedHeights = [0, 0, 0];
+var sessionFoundURLs;
+var loadedHeights;
+var loadingHeights;
 
 function reset() {
-    sessionFoundURLs = {};
+    sessionFoundURLs = {
+        "http://assets.tumblr.com/images/default_avatar_64.gif":true,
+        "http://assets.tumblr.com/images/inline_photo_loading.gif":true,
+        "http://assets.tumblr.com/images/favicon.gif":true,
+        "http://www.gif":true,
+        "http://www.reddit.com/domain/gifs.gif":true,
+        "http://gifs.gif":true
+    };
     loadedHeights = [0, 0, 0];
-    $('#gif0').empty();
-    $('#gif1').empty();
-    $('#gif2').empty();
+    loadingHeights = [0, 0, 0];
+//    $('#gif0').empty();
+//    $('#gif1').empty();
+//    $('#gif2').empty();
     $('#loaded0').empty();
     $('#loaded1').empty();
     $('#loaded2').empty();
@@ -40,14 +50,36 @@ function getLoadedColumnNumber() {
 }
 
 /**
+ * @return {Number}
+ */
+function getLoadingColumnNumber() {
+    return getIndexMin(loadingHeights);
+}
+
+/**
  * Gets the minimum index of the items in an {int} array
  * @param array array of {int}s
  * @return {int} index of the minimum item
  */
 function getIndexMin(array) {
-    var minIndex = array.length - 1;
-    for (var i = array.length - 2; i >= 0; i--) {
+    var minIndex = 0;
+    for (var i = 1; i < array.length; i++) {
+        var obj = array[i];
         minIndex = (array[i] < array[minIndex]) ? i : minIndex;
+    }
+    return minIndex;
+}
+
+/**
+ * Gets the maximum index of the items in an {int} array
+ * @param array array of {int}s
+ * @return {int} index of the minimum item
+ */
+function getIndexMax(array) {
+    var minIndex = 0;
+    for (var i = 1; i < array.length; i++) {
+        var obj = array[i];
+        minIndex = (array[i] > array[minIndex]) ? i : minIndex;
     }
     return minIndex;
 }
@@ -87,6 +119,7 @@ $("#copyBox")
 
 function createTabFunction(element) {
     return function () {
+        chrome.tabs.create({url:"popup.html"});
         chrome.tabs.create({url:element.attr("src")});
     }
 }
@@ -126,15 +159,28 @@ function createSelectorFunction(state, i) {
     };
 }
 
+function addSpinner(element) {
+    const indexMin = getIndexMin([$("#loading0 img").length, $("#loading1 img").length, $("#loading2 img").length]);
+    loadingHeights[indexMin] = loadingHeights[indexMin] + 100;
+    $("#loading" + indexMin).append(element);
+}
+
+function removeSpinner() {
+    const indexMax = getIndexMax([$("#loading0 img").length, $("#loading1 img").length, $("#loading2 img").length]);
+    $("#loading" + indexMax + " img:last-child").remove();
+}
+
 function createLoadedFunction(element) {
     return function () {
         console.log("Load fired.");
         console.log(element, element[0].naturalWidth, element[0].naturalHeight);
         console.log(element, element[0].width, element[0].height);
         var loadedColumn = getLoadedColumnNumber();
-        $("#gif" + loadedColumn).append(element);
+        removeSpinner();
+        $("#loaded" + loadedColumn).append(element);
         var imageHeight = element[0].height;
         loadedHeights[loadedColumn] = loadedHeights[loadedColumn] + ((imageHeight != 0) ? imageHeight : 100);
+
     }
 }
 
@@ -169,7 +215,8 @@ function search(searchTerm) {
                         var element = $('<img class="lazy" data-original="' + LOADING_GIF + '" src="' + foundURL + '"/>');
                         element.click(copyTextFunction(element));
                         element.dblclick(createTabFunction(element));
-                        element.load(createLoadedFunction(element));
+                        element.imagesLoaded(createLoadedFunction(element));
+                        addSpinner($('<img src="' + LOADING_GIF + '"/>'))
                     }
                 }
 
