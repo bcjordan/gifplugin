@@ -7,8 +7,6 @@ function construct_search_urls(searchTerm) {
         ['http://www.reddit.com' + '/r/brokengifs/search?q=' + searchTerm + '&restrict_sr=on'],
         ['http://www.tumblr.com' + '/tagged/' + searchTerm + '-gifs/everything'],
         ['http://www.tumblr.com' + '/tagged/' + searchTerm + '/everything'],
-//        ['http://senorgif.memebase.com' + '/tag/' + searchTerm],
-//        ['http://senorgif.memebase.com' + '/tag/' + searchTerm + '/page/2'],
     ];
 }
 
@@ -180,7 +178,6 @@ function createLoadedFunction(element) {
         $("#loaded" + loadedColumn).append(element);
         var imageHeight = element[0].height;
         loadedHeights[loadedColumn] = loadedHeights[loadedColumn] + ((imageHeight != 0) ? imageHeight : 100);
-
     }
 }
 
@@ -212,21 +209,14 @@ function search(searchTerm) {
                         sessionFoundURLs[foundURL] = true;
                         console.log("Found new gif: " + foundURL);
 //                        var element = $('<img class="lazy" src="' + LOADING_GIF + '" data-original="' + foundURL + '"/>');
-                        var element = $('<img class="lazy" data-original="' + LOADING_GIF + '" src="' + foundURL + '"/>');
+                        var sizeClass = $('#growshrink').hasClass('small') ? "huge" : "";
+                        var element = $('<img class="gif ' + sizeClass + '" data-original="' + LOADING_GIF + '" src="' + foundURL + '"/>');
                         element.click(copyTextFunction(element));
                         element.dblclick(createTabFunction(element));
                         element.imagesLoaded(createLoadedFunction(element));
-                        addSpinner($('<img src="' + LOADING_GIF + '"/>'))
+                        addSpinner($('<img class="gif" src="' + LOADING_GIF + '"/>'))
                     }
                 }
-
-//                $("img").show().lazyload(
-//                    {
-//                        threshold:300,
-//                        container:$("#gifs"),
-//                        placeholder:LOADING_GIF
-//                    }
-//                );
             },
             error:function (jqXHR, textStatus, errorThrown) {
                 console.log("error." + errorThrown);
@@ -237,18 +227,29 @@ function search(searchTerm) {
 }
 
 $(function () {
-    $('img').live('mouseover', function () {
-        jQuery(this).lightBox();
-    });
-
-    $('#big').click(function () {
-        $('body').css("min-width", "800px");
-        $('body').css("min-height", "600px");
-        $('#gifs').css('width', "750px");
-        $('#gifs').css('height', "580px");
-        $('#gif0').css('width', "220px");
-        $('#gif1').css('width', "220px");
-        $('#gif2').css('width', "220px");
-        $('img').css('width', "200px");
+    $('#growshrink').click(function () {
+        const shrink = $('span.growIcon').hasClass("small");
+        $('#growshrink span').text(shrink ? "Grow" : "Shrink");
+        $('span.growIcon').toggleClass("small");
+        $('body').toggleClass("bodyBig");
+        $('.gifs').toggleClass("gifsBig");
+        $('.gif0, .gif1, .gif2').toggleClass("width220");
+        $('.gif').animate({width: shrink ? "100px" : "200px"});
     })
 });
+
+$(function () {
+        $("#growshrink").button({
+            icons:{
+                primary:"growIcon"   // Custom icon
+            }})
+    }
+)
+
+$(function () {
+        $("#search").button({
+            icons:{
+                primary:"growIcon"   // Custom icon
+            }})
+    }
+);
